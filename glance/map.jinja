@@ -1,0 +1,146 @@
+{% set glance=salt["grains.filter_by"]({
+  "Debian":{
+    "name": "glance",
+    "pkg": ['glance', 'glance-api', 'glance-registry', 'glance-common'],
+    "service": ['glance-api', 'glance-registry'],
+    "client_pkg": "python-glanceclient",
+  },
+  "RedHat":{
+    "name": "glance",
+    "pkg": ["openstack-glance"],
+    "service": ['openstack-glance-api', 'openstack-glance-registry'],
+    "client_pkg": "python-glanceclient",
+  },
+  "default":{
+    "name": "glance",
+    "pkg": ['glance', 'glance-api', 'glance-registry', 'glance-common'],
+    "service": ['glance-api', 'glance-registry'],
+    "client_pkg": "python-glanceclient",
+  }
+  },merge=salt["pillar.get"]("glance:lookup")) %}
+
+# Set the glance-api default config
+{%- set glance_api_config = {
+  "DEFAULT": {
+    "debug": "false",
+    "verbose": "false",
+    "default_store": "file",
+    "known_stores": "glance.store.filesystem.Store",
+    "log_file": "/var/log/glance/api.log",
+    "bind_host": "0.0.0.0",
+    "bind_port": "9292",
+    "registry_host": "0.0.0.0",
+    "registry_port": "9191",
+    "filesystem_store_datadir": "/var/lib/glance/images/",
+    "image_cache_dir": "/var/lib/glance/image-cache/",
+
+    "rpc_backend": "rabbit",
+    "notification_driver": "noop",
+  },
+  "database": {
+    "connection": "mysql://glance:" + salt["pillar.get"]("glance:mysql:password") + "@" + salt["pillar.get"]("glance:mysql:ip","localhost") + "/glance?charset=utf8",
+  },
+  "keystone_authtoken": {
+    "auth_host": salt["pillar.get"]("glance:keystone:host", "localhost"),
+    "auth_port": "35357",
+    "auth_protocol": "http",
+    "admin_tenant_name": "service",
+    "admin_user": "glance",
+    "admin_password": salt["pillar.get"]("glance:keystone:password"),
+  },
+  "paste_deploy": {
+    "flavor": "keystone+cachemanagement",
+  }
+} %}
+
+# Set the glance-registry default config
+{%- set glance_reg_config = {
+  "DEFAULT": {
+    "debug": "false",
+    "verbose": "false",
+    "bind_host": "0.0.0.0",
+    "bind_port": "9191",
+    "log_file": "/var/log/glance/registry.log",
+  },
+  "database": {
+    "connection": "mysql://glance:" + salt["pillar.get"]("glance:mysql:password") + "@" + salt["pillar.get"]("glance:mysql:ip","localhost") + "/glance?charset=utf8",
+  },
+  "keystone_authtoken": {
+    "auth_host": salt["pillar.get"]("glance:keystone:host", "localhost"),
+    "auth_port": "35357",
+    "auth_protocol": "http",
+    "admin_tenant_name": "service",
+    "admin_user": "glance",
+    "admin_password": salt["pillar.get"]("glance:keystone:password"),
+  },
+  "paste_deploy": {
+    "flavor": "keystone",
+  }
+} %}
+
+# Set the glance-cache default config
+{%- set glance_cache_config = {
+  "DEFAULT": {
+    "log_file": "/var/log/glance/image-cache.log",
+    "image_cache_dir": "/var/lib/glance/image-cache/",
+    "image_cache_stall_time": "86400",
+    "image_cache_invalid_entry_grace_period": "3600",
+    "image_cache_max_size": "10737418240",
+    "registry_host": "0.0.0.0",
+    "registry_port": "9191",
+    "filesystem_store_datadir": "/var/lib/glance/images/",
+  }
+} %}
+
+# Set the glance-scrubber default config
+{%- set glance_scb_config = {
+  "DEFAULT": {
+    "log_file": "/var/log/glance/scrubber.log",
+    "daemon": "False",
+    "wakeup_time": "300",
+    "scrubber_datadir": "/var/lib/glance/scrubber",
+    "cleanup_scrubber": "False",
+    "cleanup_scrubber_time": "86400",
+    "registry_host": "0.0.0.0",
+    "registry_port": "9191",
+  }
+} %}
+
+{% if salt["pillar.get"]("glance:api-config") %}
+  {% for section, value in salt["pillar.get"]("glance:api-config").iteritems() %}
+    {% if not glance_api_config.has_key(section) %}
+      {% do glance_api_config.update({ section:{} }) %}
+    {% endif %}
+    {% do glance_api_config[section].update(value) %}
+  {% endfor %}
+{% endif %}
+
+{% if salt["pillar.get"]("glance:reg-config") %}
+  {% for section, value in salt["pillar.get"]("glance:reg-config").iteritems() %}
+    {% if not glance_reg_config.has_key(section) %}
+      {% do glance_reg_config.update({ section:{} }) %}
+    {% endif %}
+    {% do glance_reg_config[section].update(value) %}
+  {% endfor %}
+{% endif %}
+
+{% if salt["pillar.get"]("glance:cache-config") %}
+  {% for section, value in salt["pillar.get"]("glance:cache-config").iteritems() %}
+    {% if not glance_cache_config.has_key(section) %}
+      {% do glance_cache_config.update({ section:{} }) %}
+    {% endif %}
+    {% do glance_cache_config[section].update(value) %}
+  {% endfor %}
+{% endif %}
+
+{% if salt["pillar.get"]("glance:scb-config") %}
+  {% for section, value in salt["pillar.get"]("glance:scb-config").iteritems() %}
+    {% if not glance_scb_config.has_key(section) %}
+      {% do glance_scb_config.update({ section:{} }) %}
+    {% endif %}
+    {% do glance_scb_config[section].update(value) %}
+  {% endfor %}
+{% endif %}
+
+{#- vim:ft=sls
+-#}
