@@ -5,6 +5,7 @@ glance:
   mysql:
     ip: 10.0.0.12
     password: 'pass'
+    user: 'mysql'
   keystone:
     host: 10.0.0.12
     password: 'pass'
