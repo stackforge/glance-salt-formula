@@ -1,40 +1,7 @@
-==============
-Glance Formula
-==============
+This project is no longer maintained.
 
-Install and configure the OpenStack Glance service.
+The contents of this repository are still available in the Git source code
+management system. To see the contents of this repository before it reached
+its end of life, please check out the previous commit with 
+"git checkout HEAD^1".
 
-.. note::
-    See the full `Salt Formulas installation and usage instructions
-    <http://docs.saltstack.com/en/latest/topics/development/conventions/formulas.html>`_.
-
-Available states
-================
-
-.. contents::
-    :local:
-
-``glance``
-----------
-
-Install the Glance and enable the service.
-
-``glance.db``
--------------
-
-Create the db for Glance service.
-
-``glance.keystone``
--------------------
-
-Init the glance user, service and endpoint.
-
-``glance.server``
------------------
-
-Install the Glance and enable the service.
-
-``glance.client``
------------------
-
-Install the python-glanceclient package.
